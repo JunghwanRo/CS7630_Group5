@@ -1,0 +1,39 @@
+{
+    "ros.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/GTL/jro2/ros2_ws/build/vrep_ros_teleop",
+        "/home/GTL/jro2/ros2_ws/install/vrep_ros_teleop/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/task_manager_client_py",
+        "/home/GTL/jro2/ros2_ws/install/task_manager_client_py/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/install/task_manager_msgs/local/lib/python3.10/dist-packages",
+        "/home/GTL/jro2/ros2_ws/build/rover_driver_base",
+        "/home/GTL/jro2/ros2_ws/install/rover_driver_base/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/joystick_control",
+        "/home/GTL/jro2/ros2_ws/install/joystick_control/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/face_detect_base",
+        "/home/GTL/jro2/ros2_ws/install/face_detect_base/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/install/custom_interfaces/local/lib/python3.10/dist-packages",
+        "/home/GTL/jro2/ros2_ws/build/button_server",
+        "/home/GTL/jro2/ros2_ws/install/button_server/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/GTL/jro2/ros2_ws/build/vrep_ros_teleop",
+        "/home/GTL/jro2/ros2_ws/install/vrep_ros_teleop/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/task_manager_client_py",
+        "/home/GTL/jro2/ros2_ws/install/task_manager_client_py/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/install/task_manager_msgs/local/lib/python3.10/dist-packages",
+        "/home/GTL/jro2/ros2_ws/build/rover_driver_base",
+        "/home/GTL/jro2/ros2_ws/install/rover_driver_base/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/joystick_control",
+        "/home/GTL/jro2/ros2_ws/install/joystick_control/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/build/face_detect_base",
+        "/home/GTL/jro2/ros2_ws/install/face_detect_base/lib/python3.10/site-packages",
+        "/home/GTL/jro2/ros2_ws/install/custom_interfaces/local/lib/python3.10/dist-packages",
+        "/home/GTL/jro2/ros2_ws/build/button_server",
+        "/home/GTL/jro2/ros2_ws/install/button_server/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

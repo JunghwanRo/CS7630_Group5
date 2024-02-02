@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+
+<launch>
+    <arg name="merge_install" default="false"/>
+    <!-- normal install -->
+        <let name="lib_base" value="floor_nav/"/> 
+    <!-- merge install -->
+        <!-- <let name="lib_base" value=""/> -->
+    <!-- <include file="$(find-pkg-share floor_nav)/button_server.launch"/> -->
+    <include file="$(find-pkg-share vrep_ros_teleop)/teleop_mux.launch.py"/>
+    <node name="floor_tasks" pkg="floor_nav" exec="floornav_task_server" namespace="">
+        <param name="lib_path" value="$(env COLCON_PREFIX_PATH)/$(var lib_base)lib/floor_nav"/>
+        <param name="base_frame" value="rover_body"/>
+        <param name="reference_frame" value="world"/>
+        <remap from="~/scan" to="/vrep/hokuyo"/>
+        <remap from="~/cloud3d" to="/points"/>
+    </node>
+</launch>
