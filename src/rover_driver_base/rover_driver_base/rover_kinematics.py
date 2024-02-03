@@ -101,7 +101,7 @@ class RoverKinematics:
         if abs(v) < 1e-2:
             # not moving while not changing the current ICR
             theta, phi = self.ICR
-            return ICR_to_twist(theta, phi, 1e-3)
+            return self.ICR_to_twist(theta, phi, 1e-3)
         elif abs(wz) < 1e-2:
             pass
         else:
@@ -151,8 +151,25 @@ class RoverKinematics:
                 W_y = drive_cfg[k].y
                 V_Wx = twist.linear.x - twist.angular.z * W_y
                 V_Wy = twist.linear.y + twist.angular.z * W_x
+                # Debug: print W_x, W_y, V_Wx, V_Wy
+                print(f"motor: {k}, V_Wx: {V_Wx}, V_Wy: {V_Wy}")
                 motors.steering[k] = atan2(V_Wy, V_Wx)
                 motors.drive[k] = hypot(V_Wy, V_Wx) / drive_cfg[k].radius
+                # if twist.lenear.x, twist.linear.y, twist.angular.z are all less than 1e-2, then set the steering and drive to 0
+                if (
+                    abs(twist.linear.x) < 1e-2
+                    and abs(twist.linear.y) < 1e-2
+                    and abs(twist.angular.z) < 1e-2
+                ):
+                    motors.steering[k] = 0.0
+                    motors.drive[k] = 0.0
+                # Debug:
+                """
+                print(
+                    f"motor: {k}, steering: {motors.steering[k]}, drive: {motors.drive[k]}"
+                )
+                """
+
         return motors
 
     def prepare_inversion_matrix(self, drive_cfg):
@@ -215,7 +232,7 @@ class RoverKinematics:
         # First compute the local displacement in the robot frame
         dX_local = self.compute_displacement(motor_state, drive_cfg)
         # Debug: print the local displacement
-        print(dX_local)
+        # print(dX_local)
         # TODO: Now integrate the local displacement in the global frame
         """
         START CODE
@@ -259,5 +276,6 @@ class RoverKinematics:
             self.get_logger().error(
                 f"Failed to transform from rover_body to world: {str(e)}"
             )
-        print(self.X)
+        # Debug
+        # print(self.X)
         return self.X
