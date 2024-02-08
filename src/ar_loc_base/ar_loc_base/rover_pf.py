@@ -4,7 +4,7 @@ from rclpy.node import Node
 import numpy
 from numpy import *
 from numpy.linalg import inv
-from math import pi, sin, cos
+from math import pi, sin, cos, fabs
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 import bisect
@@ -38,18 +38,21 @@ class RoverPF(RoverOdo):
         # TODO: apply the displacement DeltaX, in the robot frame, to the particle X expressed in the world frame,
         # including the uncertainty present in variable uncertainty
 
-        theta = self.X[2, 0]
+        theta = X[2, 0]
         Rtheta = mat(
             [[cos(theta), -sin(theta), 0], [sin(theta), cos(theta), 0], [0, 0, 1]]
         )
-
         # Add uncertainty to the displacement DeltaX
-        DeltaX = DeltaX + mat(multiply(DeltaX, self.drawNoise(Uncertainty)))
-        # Preict X with the displacement
-        self.X = self.X + Rtheta * DeltaX
-        self.X[2, 0] = self.normAngle(self.X[2, 0])
+        # DeltaX_noise_added = DeltaX + self.drawNoise(Uncertainty) # If Uncertainty does not depend on DeltaX
+        # If Displacement Uncertainty is linear with DeltaX.
+        DeltaX_noise_added = DeltaX + mat(multiply(DeltaX, self.drawNoise(Uncertainty)))
+        # If Displacement Uncertainty is non-linear with DeltaX.
+        # TODO:
+        # Predict X with the displacement
+        X_after = X + Rtheta * DeltaX_noise_added
+        X_after[2, 0] = self.normAngle(X[2, 0])
 
-        return X
+        return X_after
 
     def predict(self, logger, motor_state, drive_cfg, encoder_precision):
         self.lock.acquire()
@@ -84,12 +87,23 @@ class RoverPF(RoverOdo):
 
     def evalParticleAR(self, X, Z, L, Uncertainty):
         # Returns the fitness of a particle with state X given observation Z of landmark L
-        return 0
+        # 1st, convert Z from robot frame to world frame
+        theta = X[2]
+        Rtheta = mat([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
+        Z_global = X[0:2] + Rtheta * Z
+        # 2nd, compute the distance between the particle and the landmark
+        d = sqrt((L[0] - Z_global[0]) ** 2 + (L[1] - Z_global[1]) ** 2)
+        # 3rd, compute the fitness with a Gaussian distribution
+        return (1 / (Uncertainty * sqrt(2 * pi))) * exp(-0.5 * ((d / Uncertainty) ** 2))
 
     def evalParticleCompass(self, X, Value, Uncertainty):
         # Returns the fitness of a particle with state X given compass observation value
         # Beware of the module when computing the difference of angles
-        return 0
+        angle_diff = fabs(self.diffAngle(X[2], Value))
+
+        return (1 / (Uncertainty * sqrt(2 * pi))) * exp(
+            -0.5 * ((angle_diff / Uncertainty) ** 2)
+        )
 
     def update_ar(self, logger, Z, L, Uncertainty):
         self.lock.acquire()
@@ -106,9 +120,25 @@ class RoverPF(RoverOdo):
         # self.particles = ...
         weights = numpy.zeros(self.N)
         for i in range(self.N):
+            # Debug : print self.particles[i]
+            # logger.info("Particle " + str(i) + " : " + str(self.particles[i]))
             weights[i] = self.evalParticleAR(self.particles[i], Z, L, Uncertainty)
         weights /= sum(weights)  # Normalize weights
-        # Resampling step might be needed here based on the weights
+
+        # Resampling using the weights
+        cumsum_weights = numpy.cumsum(weights)
+        first_position = numpy.random.rand() / self.N
+        positions = numpy.linspace(0, 1, num=self.N, endpoint=False) + first_position
+        indexes = numpy.zeros(self.N, "i")
+
+        cumulative_index = 0
+        for i, pos in enumerate(positions):
+            while cumsum_weights[cumulative_index] < pos:
+                cumulative_index += 1
+            indexes[i] = cumulative_index
+        # Use the indexes to create the resampled list of particles
+        self.particles = [self.particles[i] for i in indexes]
+
         # TODO END
 
         self.updateMean()
@@ -124,8 +154,27 @@ class RoverPF(RoverOdo):
         particles based on a compass (angle only) measurement, and compare the
         performances. Be careful to account for the modulo when computing the
         difference between two angles."""
-
         # self.particles = ...
+        weights = numpy.zeros(self.N)
+        for i in range(self.N):
+            # Debug : print self.particles[i]
+            # logger.info("Particle " + str(i) + " : " + str(self.particles[i]))
+            weights[i] = self.evalParticleCompass(self.particles[i], angle, Uncertainty)
+        weights /= sum(weights)  # Normalize weights
+
+        # Resampling using the weights
+        cumsum_weights = numpy.cumsum(weights)
+        first_position = numpy.random.rand() / self.N
+        positions = numpy.linspace(0, 1, num=self.N, endpoint=False) + first_position
+        indexes = numpy.zeros(self.N, "i")
+
+        cumulative_index = 0
+        for i, pos in enumerate(positions):
+            while cumsum_weights[cumulative_index] < pos:
+                cumulative_index += 1
+            indexes[i] = cumulative_index
+        # Use the indexes to create the resampled list of particles
+        self.particles = [self.particles[i] for i in indexes]
 
         self.updateMean()
         self.lock.release()

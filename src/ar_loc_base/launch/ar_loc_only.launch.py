@@ -51,12 +51,12 @@ def generate_launch_description():
                 parameters=[
                     {"~/rover_name": "rover"},
                     {"~/filter_name": "particle"},  # in ['odo','kalman','particle']
-                    {"~/use_ar": False},
+                    {"~/use_ar": True},
                     {"~/use_compass": False},
                     {"~/target_frame": "world"},
                     {"~/ar_precision": 0.5},
                     {"~/compass_precision": 0.1745},
-                    {"~/encoder_precision": 0.01},
+                    {"~/encoder_precision": 0.05},
                     {"~/initial_x": -6.12},
                     {"~/initial_y": 1.17},
                     {"~/initial_theta": 0.0},

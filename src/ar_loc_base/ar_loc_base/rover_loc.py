@@ -148,7 +148,7 @@ class RoverLoc(Node):
                 if res[0]:
                     return True
                 self.get_logger().warn(res[1])
-            except TransformExpection as e:
+            except TransformException as e:
                 self.get_logger().warn(f"{e}")
             now = self.get_clock().now().nanoseconds / 1e9
             if now - t0 > duration:
@@ -160,7 +160,7 @@ class RoverLoc(Node):
         if not self.ready:
             return
         if len(args) != 12:
-            rospy.logerr("Invalid number of argument in OdoCallback")
+            rclpy.logerr("Invalid number of argument in OdoCallback")
             return
         steering_val = [s.position[0] for s in args[0:6]]
         drive_val = [s.position[0] for s in args[6:12]]
@@ -248,6 +248,9 @@ class RoverLoc(Node):
 
                 # TODO
                 self.filter.update_ar(self.get_logger(), Z, L, self.ar_precision)
+                # Debug : print Z and L
+                # self.get_logger().info("Z=" + str(Z.T))
+                # self.get_logger().info("L=" + str(L.T))
             except e:
                 self.logger.error(f"{e}")
                 continue
@@ -259,7 +262,7 @@ class RoverLoc(Node):
         self.filter.update_compass(
             self.get_logger(), value.data, self.compass_precision
         )
-        self.publish(self.get_clock().now())
+        self.publish(self.get_clock().now().to_msg)
 
 
 def main(args=None):
