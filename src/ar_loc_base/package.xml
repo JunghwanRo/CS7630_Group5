@@ -7,7 +7,7 @@
   <maintainer email="cedric.pradalier@georgiatech-metz.fr">cedricp</maintainer>
   <license>TODO: License declaration</license>
 
-  <depend>rover_driver_base</depend>
+  <depend>rover_driver</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>

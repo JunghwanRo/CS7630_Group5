@@ -42,17 +42,31 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        launch_ros.actions.Node(
-            package='aruco_opencv', executable='aruco_tracker_autostart', name='aruco',
-            parameters=[os.path.join( get_package_share_directory('ar_mapping_base'), 'aruco_tracker.yaml')],
-            remappings=[
-                ('/vrep/camera', '/vrep/camera/image_raw'),
-                ('/vrep/camera_info', '/vrep/camera/camera_info'),
+    return LaunchDescription(
+        [
+            launch_ros.actions.Node(
+                package="aruco_opencv",
+                executable="aruco_tracker_autostart",
+                name="aruco",
+                parameters=[
+                    os.path.join(
+                        get_package_share_directory("ar_mapping_base"),
+                        "aruco_tracker.yaml",
+                    )
                 ],
-            output='screen'),
-        IncludeLaunchDescription(
-              PythonLaunchDescriptionSource([get_package_share_directory('rover_driver_base') ,
-                        '/rover_odom.launch.py'])
-              )
-    ])
+                remappings=[
+                    ("/vrep/camera", "/vrep/camera/image_raw"),
+                    ("/vrep/camera_info", "/vrep/camera/camera_info"),
+                ],
+                output="screen",
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [
+                        get_package_share_directory("rover_driver"),
+                        "/rover_odom.launch.py",
+                    ]
+                )
+            ),
+        ]
+    )

@@ -9,7 +9,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose
 import bisect
 import threading
-from rover_driver_base.rover_kinematics import RoverKinematics
+from rover_driver.rover_kinematics import RoverKinematics
 from ar_loc_base.rover_odo import RoverOdo
 
 
@@ -28,13 +28,27 @@ class RoverPF(RoverOdo):
 
     def drawNoise(self, norm):
         if type(norm) == list:
-            return mat(vstack(norm) * (2 * random.rand(3, 1) - vstack([1, 1, 1])))
+            return mat(
+                vstack(norm) * (2 * random.rand(len(norm), 1) - vstack([1, 1, 1]))
+            )
         else:
             return mat(multiply(norm, ((2 * random.rand(3, 1) - vstack([1, 1, 1])))))
 
     def applyDisplacement(self, X, DeltaX, Uncertainty):
         # TODO: apply the displacement DeltaX, in the robot frame, to the particle X expressed in the world frame,
         # including the uncertainty present in variable uncertainty
+
+        theta = self.X[2, 0]
+        Rtheta = mat(
+            [[cos(theta), -sin(theta), 0], [sin(theta), cos(theta), 0], [0, 0, 1]]
+        )
+
+        # Add uncertainty to the displacement DeltaX
+        DeltaX = DeltaX + mat(multiply(DeltaX, self.drawNoise(Uncertainty)))
+        # Preict X with the displacement
+        self.X = self.X + Rtheta * DeltaX
+        self.X[2, 0] = self.normAngle(self.X[2, 0])
+
         return X
 
     def predict(self, logger, motor_state, drive_cfg, encoder_precision):
@@ -64,7 +78,6 @@ class RoverPF(RoverOdo):
             self.particles[i] = self.applyDisplacement(
                 self.particles[i], DeltaX, encoder_precision
             )
-
         # TODO END
         self.updateMean()
         self.lock.release()

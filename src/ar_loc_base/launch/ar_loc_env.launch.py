@@ -63,7 +63,7 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     [
-                        get_package_share_directory("rover_driver_base"),
+                        get_package_share_directory("rover_driver"),
                         "/rover_odom.launch.py",
                     ]
                 )

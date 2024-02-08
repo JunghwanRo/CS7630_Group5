@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ar_slam_base</name>
+  <name>rover_driver</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="cedric.pradalier@georgiatech-metz.fr">cedricp</maintainer>
@@ -10,13 +10,10 @@
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>rclpy</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
-  <depend>visualization_msgs</depend>
-  <depend>ar_mapping_base</depend> <!-- launch files -->
-  <depend>rover_driver</depend> <!-- Kinematic -->
-  <depend>ar_loc_base</depend> <!-- RoverOdo -->
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -42,25 +42,42 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        launch_ros.actions.Node(
-            package='ar_mapping_base', executable='ar_mapping_node', name='ar_mapping',
-            parameters=[
-                {'rover_name': 'rover'},
-                {'target_frame': 'world'},
-                {'ar_precision': 0.5},
+    return LaunchDescription(
+        [
+            launch_ros.actions.Node(
+                package="ar_mapping_base",
+                executable="ar_mapping_node",
+                name="ar_mapping",
+                parameters=[
+                    {"rover_name": "rover"},
+                    {"target_frame": "world"},
+                    {"ar_precision": 0.5},
                 ],
-            output='screen'),
-        launch_ros.actions.Node(
-            package='aruco_opencv', executable='aruco_tracker_autostart', name='aruco',
-            parameters=[os.path.join( get_package_share_directory('ar_mapping_base'), 'aruco_tracker.yaml')],
-            remappings=[
-                ('/vrep/camera', '/vrep/camera/image_raw'),
-                ('/vrep/camera_info', '/vrep/camera/camera_info'),
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="aruco_opencv",
+                executable="aruco_tracker_autostart",
+                name="aruco",
+                parameters=[
+                    os.path.join(
+                        get_package_share_directory("ar_mapping_base"),
+                        "aruco_tracker.yaml",
+                    )
                 ],
-            output='screen'),
-        IncludeLaunchDescription(
-              PythonLaunchDescriptionSource([get_package_share_directory('rover_driver_base') ,
-                        '/rover_odom.launch.py'])
-              )
-    ])
+                remappings=[
+                    ("/vrep/camera", "/vrep/camera/image_raw"),
+                    ("/vrep/camera_info", "/vrep/camera/camera_info"),
+                ],
+                output="screen",
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [
+                        get_package_share_directory("rover_driver"),
+                        "/rover_odom.launch.py",
+                    ]
+                )
+            ),
+        ]
+    )
