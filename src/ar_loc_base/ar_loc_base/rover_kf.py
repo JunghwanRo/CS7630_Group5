@@ -25,6 +25,10 @@ class RoverKF(RoverOdo):
         return self.getRotation(-self.X[2, 0])
 
     def predict(self, logger, motor_state, drive_cfg, encoder_precision):
+        """
+        Modify the predict function to implement the prediction step of the Kalman
+        filter. Only modify the part of the function marked with #TODO
+        """
         self.lock.acquire()
         # The first time, we need to initialise the state
         if self.first_run:
@@ -48,6 +52,13 @@ class RoverKF(RoverOdo):
         return (self.X, self.P)
 
     def update_ar(self, logger, Z, L, uncertainty):
+        """
+        Modify the ar_update function to implement the update step of the Kalman
+        filter assuming landmarks are observed. The argument Z is a 2x1 vector of the
+        measurement in the rover reference frame. L is the position of the observed
+        landmark in the world frame as a 2x1 vector. Uncertainty is the uncertainty on the
+        measurement process, given as a direction-less radius.
+        """
         self.lock.acquire()
         logger.info("Update: L=" + str(L.T) + " X=" + str(self.X.T))
         # TODO
@@ -57,6 +68,12 @@ class RoverKF(RoverOdo):
         return (self.X, self.P)
 
     def update_compass(self, logger, Z, uncertainty):
+        """
+        implement the compass_update function, which updates the state of the
+        particles based on a compass (angle only) measurement, and compare the
+        performances. Be careful to account for the modulo when computing the
+        difference between two angles.
+        """
         self.lock.acquire()
         logger.info("Update: S=" + str(Z) + " X=" + str(self.X.T))
         # Implement kalman update using compass here

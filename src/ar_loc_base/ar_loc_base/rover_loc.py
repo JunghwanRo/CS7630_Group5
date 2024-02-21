@@ -262,7 +262,7 @@ class RoverLoc(Node):
         self.filter.update_compass(
             self.get_logger(), value.data, self.compass_precision
         )
-        self.publish(self.get_clock().now().to_msg)
+        self.publish(self.get_clock().now().to_msg())
 
 
 def main(args=None):

@@ -87,14 +87,18 @@ class RoverPF(RoverOdo):
 
     def evalParticleAR(self, X, Z, L, Uncertainty):
         # Returns the fitness of a particle with state X given observation Z of landmark L
-        # 1st, convert Z from robot frame to world frame
-        theta = X[2]
-        Rtheta = mat([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
-        Z_global = X[0:2] + Rtheta * Z
-        # 2nd, compute the distance between the particle and the landmark
-        d = sqrt((L[0] - Z_global[0]) ** 2 + (L[1] - Z_global[1]) ** 2)
-        # 3rd, compute the fitness with a Gaussian distribution
-        return (1 / (Uncertainty * sqrt(2 * pi))) * exp(-0.5 * ((d / Uncertainty) ** 2))
+        # Note that the comparison should be done in the observation space, not the world space
+
+        # Convert the landmark position L to the robot's frame
+        delta_L = L - X[0:2]
+        theta = X[2, 0]
+        Rtheta_inv = mat([[cos(-theta), -sin(-theta)], [sin(-theta), cos(-theta)]])
+        Z_expected = Rtheta_inv * delta_L
+
+        # Compare z_expected with the observation Z
+        d = sqrt((Z_expected[0] - Z[0]) ** 2 + (Z_expected[1] - Z[1]) ** 2)
+
+        return (1 / (Uncertainty * sqrt(2 * pi))) * exp(-0.5 * (d / Uncertainty) ** 2)
 
     def evalParticleCompass(self, X, Value, Uncertainty):
         # Returns the fitness of a particle with state X given compass observation value
