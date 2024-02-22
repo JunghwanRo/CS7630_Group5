@@ -43,10 +43,24 @@ class RoverKF(RoverOdo):
         self.motor_state.copy(motor_state)
 
         # TODO: Implement Kalman prediction here
-
         # ultimately :
         # self.X =
         # self.P =
+
+        deltaX = iW * S
+        dx = deltaX[0]
+        dy = deltaX[1]
+        dtheta = deltaX[2]
+
+        # Project the state ahead.
+        # Xk = f(Xk-1, Uk-1, 0)
+        self.X = 
+        
+        # Project the error covariance ahead.
+        # Pk = Ak * Pk-1 * Ak^T + Wk * Qk-1 * Wk^T
+        self.P = 
+
+        # TODO END
 
         self.lock.release()
         return (self.X, self.P)
