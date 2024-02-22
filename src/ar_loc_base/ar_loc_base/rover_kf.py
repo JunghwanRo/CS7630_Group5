@@ -47,19 +47,27 @@ class RoverKF(RoverOdo):
         # self.X =
         # self.P =
 
+        theta = self.X[2, 0]
+        Rtheta = mat(
+            [[cos(theta), -sin(theta), 0], [sin(theta), cos(theta), 0], [0, 0, 1]]
+        )
+
         deltaX = iW * S
-        dx = deltaX[0]
-        dy = deltaX[1]
-        dtheta = deltaX[2]
 
         # Project the state ahead.
         # Xk = f(Xk-1, Uk-1, 0)
-        self.X = 
-        
-        # Project the error covariance ahead.
-        # Pk = Ak * Pk-1 * Ak^T + Wk * Qk-1 * Wk^T
-        self.P = 
+        RthetaDeltaX = Rtheta * deltaX
+        self.X = self.X + RthetaDeltaX
 
+        # A = df/dx -> Jacobian
+        A = mat([[1, 0, -RthetaDeltaX[1, 0]], [0, 1, RthetaDeltaX[0, 0]], [0, 0, 1]])
+        # B = df/du -> Jacobian, ignored since we do not have control input
+        # Q = Process noise covariance
+        Q = mat(diag([encoder_precision, encoder_precision, encoder_precision / 10]))
+
+        # Project the error covariance ahead.
+        # Pk = Ak * Pk-1 * Ak^T + (B * Qu * B^T) + Q
+        self.P = A * self.P * A.T + Q
         # TODO END
 
         self.lock.release()
@@ -76,15 +84,42 @@ class RoverKF(RoverOdo):
         self.lock.acquire()
         logger.info("Update: L=" + str(L.T) + " X=" + str(self.X.T))
         # TODO
+        # Ultimately, you should have:
         # self.X =
         # self.P =
+
+        theta = self.X[2, 0]
+        R_minus_theta = mat(
+            [[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]]
+        )
+
+        # h_XL
+        h_XL = R_minus_theta * (L - self.X[0:2])
+        # H = dh/dx -> Jacobian
+        H = mat(
+            [-cos(theta), -sin(theta), h_XL[1, 0]],
+            [sin(theta), -cos(theta), -h_XL[0, 0]],
+        )
+
+        # K = kalman gain
+        # K = Pk * H^T * inv(H * Pk * H^T + R)
+        R = mat(diag([uncertainty, uncertainty]))
+        K = self.P * H.T * inv(H * self.P * H.T + R)
+
+        # Xk = Xk-1 + K (Zk - h(Xk-1))
+        self.X = self.X + K * (Z - h_XL)
+        self.X[2, 0] = self.normAngle(self.X[2, 0])
+
+        # Pk = (I - K * H) * Pk
+        self.P = (eye(3) - K * H) * self.P
+        # TODO END
         self.lock.release()
         return (self.X, self.P)
 
     def update_compass(self, logger, Z, uncertainty):
         """
         implement the compass_update function, which updates the state of the
-        particles based on a compass (angle only) measurement, and compare the
+        robot based on a compass (angle only) measurement, and compare the
         performances. Be careful to account for the modulo when computing the
         difference between two angles.
         """
@@ -94,6 +129,25 @@ class RoverKF(RoverOdo):
         # TODO
         # self.X =
         # self.P =
+
+        # h_XTheta
+        h_XTheta = self.X[2, 0]
+        # H = dh/dx -> Jacobian
+        H = mat([[0, 0, 1]])
+
+        # K = kalman gain
+        # K = Pk * H^T * inv(H * Pk * H^T + R)
+        R = mat(diag([uncertainty]))
+        K = self.P * H.T * inv(H * self.P * H.T + R)
+
+        # Xk = Xk-1 + K (Zk - h(Xk-1))
+        self.X = self.X + K * (Z - h_XTheta)
+        self.X[2, 0] = self.normAngle(self.X[2, 0])
+
+        # Pk = (I - K * H) * Pk
+        self.P = (eye(3) - K * H) * self.P
+
+        # TODO END
         self.lock.release()
         return (self.X, self.P)
 
