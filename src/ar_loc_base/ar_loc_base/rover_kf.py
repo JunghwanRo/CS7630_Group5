@@ -89,16 +89,16 @@ class RoverKF(RoverOdo):
         # self.P =
 
         theta = self.X[2, 0]
-        R_minus_theta = mat(
-            [[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]]
-        )
+        R_minus_theta = mat([[cos(theta), sin(theta)], [-sin(theta), cos(theta)]])
 
         # h_XL
         h_XL = R_minus_theta * (L - self.X[0:2])
         # H = dh/dx -> Jacobian
         H = mat(
-            [-cos(theta), -sin(theta), h_XL[1, 0]],
-            [sin(theta), -cos(theta), -h_XL[0, 0]],
+            [
+                [-cos(theta), -sin(theta), h_XL[1, 0]],
+                [sin(theta), -cos(theta), -h_XL[0, 0]],
+            ]
         )
 
         # K = kalman gain
@@ -113,6 +113,7 @@ class RoverKF(RoverOdo):
         # Pk = (I - K * H) * Pk
         self.P = (eye(3) - K * H) * self.P
         # TODO END
+
         self.lock.release()
         return (self.X, self.P)
 
