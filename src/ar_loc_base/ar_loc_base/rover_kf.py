@@ -41,7 +41,8 @@ class RoverKF(RoverOdo):
         iW = self.prepare_inversion_matrix(drive_cfg)
         S = self.prepare_displacement_matrix(self.motor_state, motor_state, drive_cfg)
         self.motor_state.copy(motor_state)
-
+        print(f"iW: {iW}")
+        print(f"S: {S}")
         # TODO: Implement Kalman prediction here
         # ultimately :
         # self.X =
@@ -61,18 +62,19 @@ class RoverKF(RoverOdo):
 
         # A = df/dx -> Jacobian
         A = mat([[1, 0, -RthetaDeltaX[1, 0]], [0, 1, RthetaDeltaX[0, 0]], [0, 0, 1]])
-        # B = df/du -> Jacobian, using S as u
+        # B = df/du -> Jacobian, using S = u
         B = iW
         # Q = Process noise covariance
-        Q = mat(
+        Q = mat(diag([encoder_precision**2, encoder_precision**2, 0.0]))
+        Qu = mat(
             diag(
-                [encoder_precision**2, encoder_precision**2, encoder_precision**2 / 10]
+                [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
             )
         )
 
         # Project the error covariance ahead.
         # Pk = Ak * Pk-1 * Ak^T + (B * Qu * B^T) + Q
-        self.P = A * self.P * A.T + Q
+        self.P = A * self.P * A.T + B * Qu * B.T + Q
         # TODO END
 
         self.lock.release()
