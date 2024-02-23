@@ -61,9 +61,14 @@ class RoverKF(RoverOdo):
 
         # A = df/dx -> Jacobian
         A = mat([[1, 0, -RthetaDeltaX[1, 0]], [0, 1, RthetaDeltaX[0, 0]], [0, 0, 1]])
-        # B = df/du -> Jacobian, ignored since we do not have control input
+        # B = df/du -> Jacobian, using S as u
+        B = iW
         # Q = Process noise covariance
-        Q = mat(diag([encoder_precision, encoder_precision, encoder_precision / 10]))
+        Q = mat(
+            diag(
+                [encoder_precision**2, encoder_precision**2, encoder_precision**2 / 10]
+            )
+        )
 
         # Project the error covariance ahead.
         # Pk = Ak * Pk-1 * Ak^T + (B * Qu * B^T) + Q
@@ -103,7 +108,7 @@ class RoverKF(RoverOdo):
 
         # K = kalman gain
         # K = Pk * H^T * inv(H * Pk * H^T + R)
-        R = mat(diag([uncertainty, uncertainty]))
+        R = mat(diag([uncertainty**2, uncertainty**2]))
         K = self.P * H.T * inv(H * self.P * H.T + R)
 
         # Xk = Xk-1 + K (Zk - h(Xk-1))
@@ -138,11 +143,11 @@ class RoverKF(RoverOdo):
 
         # K = kalman gain
         # K = Pk * H^T * inv(H * Pk * H^T + R)
-        R = mat(diag([uncertainty]))
+        R = mat(diag([uncertainty**2]))
         K = self.P * H.T * inv(H * self.P * H.T + R)
 
         # Xk = Xk-1 + K (Zk - h(Xk-1))
-        self.X = self.X + K * (Z - h_XTheta)
+        self.X = self.X + K * self.diffAngle(Z, h_XTheta)
         self.X[2, 0] = self.normAngle(self.X[2, 0])
 
         # Pk = (I - K * H) * Pk

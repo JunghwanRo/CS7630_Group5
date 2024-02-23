@@ -57,9 +57,10 @@ class Landmark:
 
         # Update
         theta = X[2, 0]
+        Rtheta = mat([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
         R_minus_theta = mat([[cos(theta), sin(theta)], [-sin(theta), cos(theta)]])
         # get L with current X and Z
-        self.L = X[0:2] + R_minus_theta * Z
+        self.L = X[0:2] + Rtheta * Z
         h_XL = R_minus_theta * (self.L - X[0:2])
 
         H = R_minus_theta
