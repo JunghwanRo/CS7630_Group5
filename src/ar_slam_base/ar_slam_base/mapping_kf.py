@@ -54,17 +54,24 @@ class MappingKF(RoverOdo):
         # self.X[0:3,0] = ...
         # self.P[0:3,0:3] = ...
 
+        RthetaDeltaX = Rtheta * DeltaX
+
         # Project the state ahead.
         # Xk = f(Xk-1, Uk-1, 0)
-        self.X = 
+        self.X[0:3, 0] += RthetaDeltaX
 
         # A = df/dx -> Jacobian
-        A = 
-        # B = df/du -> Jacobian, using S = u
-        B = 
+        A = np.eye(len(self.X))
+        A[0:3, 0:3] = np.mat(
+            [[1, 0, -RthetaDeltaX[1, 0]], [0, 1, RthetaDeltaX[0, 0]], [0, 0, 1]]
+        )
+        # B = df/du -> Jacobian, need check...
+        B = np.zeros((len(self.X), len(DeltaX)))
         # Q = Process noise covariance
-        Q = 
-        Qu = 
+        Q = np.zeros((len(self.X), len(self.X)))
+        Q[0:3, 0:3] = np.mat(np.diag([0.01, 0.01, 0.0]))
+        # Qu = Diagonal matrix of 0.01, len(DeltaX) x len(DeltaX)
+        Qu = np.mat(np.diag([0.01] * len(DeltaX)))
 
         # Project the error covariance ahead.
         # Pk = Ak * Pk-1 * Ak^T + (B * Qu * B^T) + Q
@@ -75,7 +82,6 @@ class MappingKF(RoverOdo):
         return (self.X, self.P)
 
     def update_ar(self, logger, Z, id, uncertainty):
-        # Z is a dictionary of id->vstack([x,y])
         self.lock.acquire()
         logger.info("Update: Z=" + str(Z.T) + " X=" + str(self.X.T) + " Id=" + str(id))
         print("Update: Z=" + str(Z.T) + " X=" + str(self.X.T) + " Id=" + str(id))
@@ -85,32 +91,43 @@ class MappingKF(RoverOdo):
         # self.X = ...
         # self.P = ...
 
-        L = Z[id]
-        theta = self.X[2, 0]
-        R_minus_theta = np.mat([[cos(theta), sin(theta)], [-sin(theta), cos(theta)]])
+        if id not in self.idx:
+            # New landmark, update state and covariance
+            self.idx[id] = Z
+            self.X = np.vstack([self.X, Z])
+            self.P = 
+        else:
+            # Existing landmark, update state and covariance
 
-        # h_XL
-        h_XL = R_minus_theta * (L - self.X[0:2])
-        # H = dh/dx -> Jacobian
-        H = np.mat(
-            [
-                [-cos(theta), -sin(theta), h_XL[1, 0]],
-                [sin(theta), -cos(theta), -h_XL[0, 0]],
-            ]
-        )
+            L = self.idx[id]
+            theta = self.X[2, 0]
+            R_minus_theta = np.mat(
+                [[cos(theta), sin(theta)], [-sin(theta), cos(theta)]]
+            )
 
-        # K = kalman gain
-        # K = Pk * H^T * inv(H * Pk * H^T + R)
-        R = np.mat(np.diag([uncertainty**2, uncertainty**2]))
-        K = self.P * H.T * inv(H * self.P * H.T + R)
+            # h_XL
+            h_XL = R_minus_theta * (L - self.X[0:2])
+            # H = dh/dx -> Jacobian
+            H = np.mat(
+                [
+                    [-cos(theta), -sin(theta), h_XL[1, 0]],
+                    [sin(theta), -cos(theta), -h_XL[0, 0]],
+                ]
+            )
 
-        # Xk = Xk-1 + K (Zk - h(Xk-1))
-        self.X = self.X + K * (Z - h_XL)
-        self.X[2, 0] = self.normAngle(self.X[2, 0])
+            # K = kalman gain
+            # K = Pk * H^T * inv(H * Pk * H^T + R)
+            R = np.mat(np.diag([uncertainty**2, uncertainty**2]))
+            K = self.P * H.T * inv(H * self.P * H.T + R)
 
-        # Pk = (I - K * H) * Pk
-        self.P = (np.eye(3) - K * H) * self.P
+            # Xk = Xk-1 + K (Zk - h(Xk-1))
+            self.X = self.X + K * (Z - h_XL)
+            self.X[2, 0] = self.normAngle(self.X[2, 0])
+
+            # Pk = (I - K * H) * Pk
+            self.P = (np.eye(3) - K * H) * self.P
         # TODO END
+
         self.lock.release()
         return (self.X, self.P)
 
