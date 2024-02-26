@@ -53,13 +53,30 @@ class MappingKF(RoverOdo):
         )
         # self.X[0:3,0] = ...
         # self.P[0:3,0:3] = ...
+
+        # Project the state ahead.
+        # Xk = f(Xk-1, Uk-1, 0)
+        self.X = 
+
+        # A = df/dx -> Jacobian
+        A = 
+        # B = df/du -> Jacobian, using S = u
+        B = 
+        # Q = Process noise covariance
+        Q = 
+        Qu = 
+
+        # Project the error covariance ahead.
+        # Pk = Ak * Pk-1 * Ak^T + (B * Qu * B^T) + Q
+        self.P = A * self.P * A.T + B * Qu * B.T + Q
+        # TODO END
+
         self.lock.release()
         return (self.X, self.P)
 
     def update_ar(self, logger, Z, id, uncertainty):
         # Z is a dictionary of id->vstack([x,y])
         self.lock.acquire()
-        # TODO
         logger.info("Update: Z=" + str(Z.T) + " X=" + str(self.X.T) + " Id=" + str(id))
         print("Update: Z=" + str(Z.T) + " X=" + str(self.X.T) + " Id=" + str(id))
         # Update the full state self.X and self.P based on landmark id
@@ -67,17 +84,62 @@ class MappingKF(RoverOdo):
         # TODO
         # self.X = ...
         # self.P = ...
+
+        L = Z[id]
+        theta = self.X[2, 0]
+        R_minus_theta = np.mat([[cos(theta), sin(theta)], [-sin(theta), cos(theta)]])
+
+        # h_XL
+        h_XL = R_minus_theta * (L - self.X[0:2])
+        # H = dh/dx -> Jacobian
+        H = np.mat(
+            [
+                [-cos(theta), -sin(theta), h_XL[1, 0]],
+                [sin(theta), -cos(theta), -h_XL[0, 0]],
+            ]
+        )
+
+        # K = kalman gain
+        # K = Pk * H^T * inv(H * Pk * H^T + R)
+        R = np.mat(np.diag([uncertainty**2, uncertainty**2]))
+        K = self.P * H.T * inv(H * self.P * H.T + R)
+
+        # Xk = Xk-1 + K (Zk - h(Xk-1))
+        self.X = self.X + K * (Z - h_XL)
+        self.X[2, 0] = self.normAngle(self.X[2, 0])
+
+        # Pk = (I - K * H) * Pk
+        self.P = (np.eye(3) - K * H) * self.P
+        # TODO END
         self.lock.release()
         return (self.X, self.P)
 
     def update_compass(self, logger, Z, uncertainty):
         self.lock.acquire()
-        # TODO
         logger.info("Update: S=" + str(Z) + " X=" + str(self.X.T))
         # Update the full state self.X and self.P based on compass measurement
         # TODO
         # self.X = ...
         # self.P = ...
+
+        # h_XTheta
+        h_XTheta = self.X[2, 0]
+        # H = dh/dx -> Jacobian
+        H = np.mat([[0, 0, 1]])
+
+        # K = kalman gain
+        # K = Pk * H^T * inv(H * Pk * H^T + R)
+        R = np.mat(np.diag([uncertainty**2]))
+        K = self.P * H.T * inv(H * self.P * H.T + R)
+
+        # Xk = Xk-1 + K (Zk - h(Xk-1))
+        self.X = self.X + K * self.diffAngle(Z, h_XTheta)
+        self.X[2, 0] = self.normAngle(self.X[2, 0])
+
+        # Pk = (I - K * H) * Pk
+        self.P = (np.eye(3) - K * H) * self.P
+        # TODO END
+
         self.lock.release()
         return (self.X, self.P)
 
