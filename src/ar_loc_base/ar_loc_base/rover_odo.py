@@ -69,7 +69,7 @@ class RoverOdo(RoverKinematics):
     def publish(self, pose_pub, odom_pub, target_frame, stamp, child_frame):
         pose = PoseStamped()
         pose.header.frame_id = target_frame
-        pose.header.stamp = stamp
+        pose.header.stamp = stamp.to_msg()
         pose.pose.position.x = self.X[0, 0]
         pose.pose.position.y = self.X[1, 0]
         pose.pose.position.z = 0.0
@@ -87,26 +87,46 @@ class RoverOdo(RoverKinematics):
         odom_pub.publish(odom)
         return pose
 
-    def broadcast(self, br, target_frame, stamp):
+    def broadcast(self, br, reference_frame, base_frame, stamp, inverse=False):
         # Publishing the inverse transform to avoid tree problems in TF
         t = TransformStamped()
 
         # Read message content and assign it to
         # corresponding tf variables
         t.header.stamp = stamp
-        t.header.frame_id = target_frame
-        t.child_frame_id = "arloc"
+        if inverse:
+            t.header.frame_id = base_frame
+            t.child_frame_id = reference_frame
 
-        # coordinates from the message and set the z coordinate to 0
-        t.transform.translation.x = self.X[0, 0]
-        t.transform.translation.y = self.X[1, 0]
-        t.transform.translation.z = 0.0
+            # coordinates from the message and set the z coordinate to 0
+            t.transform.translation.x = -(
+                cos(self.X[2, 0]) * self.X[0, 0] + sin(self.X[2, 0]) * self.X[1, 0]
+            )
+            t.transform.translation.y = -(
+                -sin(self.X[2, 0]) * self.X[0, 0] + cos(self.X[2, 0]) * self.X[1, 0]
+            )
+            t.transform.translation.z = 0.0
 
-        q = self.quaternion_from_euler(0, 0, self.X[2, 0])
-        t.transform.rotation.x = q[0]
-        t.transform.rotation.y = q[1]
-        t.transform.rotation.z = q[2]
-        t.transform.rotation.w = q[3]
+            q = self.quaternion_from_euler(0, 0, -self.X[2, 0])
+            t.transform.rotation.x = q[0]
+            t.transform.rotation.y = q[1]
+            t.transform.rotation.z = q[2]
+            t.transform.rotation.w = q[3]
+
+        else:
+            t.header.frame_id = reference_frame
+            t.child_frame_id = base_frame
+
+            # coordinates from the message and set the z coordinate to 0
+            t.transform.translation.x = self.X[0, 0]
+            t.transform.translation.y = self.X[1, 0]
+            t.transform.translation.z = 0.0
+
+            q = self.quaternion_from_euler(0, 0, self.X[2, 0])
+            t.transform.rotation.x = q[0]
+            t.transform.rotation.y = q[1]
+            t.transform.rotation.z = q[2]
+            t.transform.rotation.w = q[3]
 
         # Send the transformation
         br.sendTransform(t)
@@ -115,12 +135,12 @@ class RoverOdo(RoverKinematics):
         ai /= 2.0
         aj /= 2.0
         ak /= 2.0
-        ci = math.cos(ai)
-        si = math.sin(ai)
-        cj = math.cos(aj)
-        sj = math.sin(aj)
-        ck = math.cos(ak)
-        sk = math.sin(ak)
+        ci = cos(ai)
+        si = sin(ai)
+        cj = cos(aj)
+        sj = sin(aj)
+        ck = cos(ak)
+        sk = sin(ak)
         cc = ci * ck
         cs = ci * sk
         sc = si * ck

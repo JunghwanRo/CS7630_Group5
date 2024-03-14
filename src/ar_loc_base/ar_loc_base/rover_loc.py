@@ -29,6 +29,7 @@ class RoverLoc(Node):
         self.name = name
         self.declare_parameter("~/rover_name", self.name)
         self.declare_parameter("~/target_frame", "world")
+        self.declare_parameter("~/base_frame", "%s_ground" % (self.name))
         self.declare_parameter("~/use_ar", False)
         self.declare_parameter("~/use_compass", False)
         self.declare_parameter("~/filter_name", "odo")
@@ -47,6 +48,9 @@ class RoverLoc(Node):
         )
         self.target_frame = (
             self.get_parameter("~/target_frame").get_parameter_value().string_value
+        )
+        self.base_frame = (
+            self.get_parameter("~/base_frame").get_parameter_value().string_value
         )
         self.filter_name = (
             self.get_parameter("~/filter_name").get_parameter_value().string_value
@@ -94,10 +98,10 @@ class RoverLoc(Node):
         self.radius = {}
         for k in prefix:
             try:
-                if not self.waittf("%s_ground" % (self.name), "%sDrive" % k, 60.0):
+                if not self.waittf(self.base_frame, "%sDrive" % k, 60.0):
                     raise TransformException
                 t = self.tf_buffer.lookup_transform(
-                    "%s_ground" % (self.name), "%sDrive" % k, rclpy.time.Time()
+                    self.base_frame, "%sDrive" % k, rclpy.time.Time()
                 )
                 self.radius[k] = t.transform.translation.z
                 self.get_logger().info("Got transform for " + k)
@@ -171,18 +175,16 @@ class RoverLoc(Node):
 
     def publish(self, stamp):
         self.filter.publish(
-            self.pose_pub,
-            self.odom_pub,
-            self.target_frame,
-            stamp,
-            "%s_ground" % self.name,
+            self.pose_pub, self.odom_pub, self.target_frame, stamp, self.base_frame
         )
-        self.filter.broadcast(self.broadcaster, self.target_frame, stamp)
+        self.filter.broadcast(
+            self.broadcaster, self.target_frame, self.base_frame, stamp, False
+        )
 
     def odo_cb(self, timestamp, motors):
         # Get the pose of all drives
         drive_cfg = {}
-        to_frame_rel = "%s_ground" % (self.name)
+        to_frame_rel = self.base_frame
         for k in prefix:
             try:
                 from_frame_rel = "%sDrive" % k
@@ -220,7 +222,7 @@ class RoverLoc(Node):
                     self.get_logger().info(res[1])
                     continue
                 res = self.tf_buffer.can_transform(
-                    "%s_ground" % self.name,
+                    self.base_frame,
                     markers.header.frame_id,
                     markers.header.stamp,
                     rclpy.time.Duration(seconds=1.0),
@@ -239,9 +241,7 @@ class RoverLoc(Node):
                 m_pose.header = markers.header
                 m_pose.point = m.pose.position
                 t = self.tf_buffer.lookup_transform(
-                    "%s_ground" % (self.name),
-                    markers.header.frame_id,
-                    markers.header.stamp,
+                    self.base_frame, markers.header.frame_id, markers.header.stamp
                 )
                 m_pose = tf2_geometry_msgs.do_transform_point(m_pose, t)
                 Z = vstack([m_pose.point.x, m_pose.point.y])
