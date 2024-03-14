@@ -44,17 +44,16 @@ import launch_ros.descriptions
 def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='ar_slam_base', executable='tb_slam_node', name='ar_slam',
-            parameters=[
-                {'~/ignore_id': False},
-                {'~/target_frame': 'map'},
-                {'~/ar_precision': 0.01},
-                {'~/x_precision': 1e-4},
-                {'~/y_precision': 1e-6},
-                {'~/theta_precision': 1e-5},
-                {'~/initial_x': -6.12},
-                {'~/initial_y': 1.17},
-                {'~/initial_theta': 0.0},
+            package='aruco_opencv', executable='aruco_tracker_autostart', name='aruco',
+            parameters=[os.path.join( get_package_share_directory('ar_slam_base'), 'aruco_tracker_tb.yaml')],
+            remappings=[
+                ('/vrep/camera', '/kinect/image_raw'),
+                ('/vrep/camera_info', '/kinect/camera_info'),
                 ],
+            #arguments= [ "--ros-args", "--log-level", "aruco:=debug"],
             output='screen'),
+        IncludeLaunchDescription(
+              PythonLaunchDescriptionSource([get_package_share_directory('vrep_ros_teleop') ,
+                        '/teleop_mux_tb.launch.py'])
+              )
     ])

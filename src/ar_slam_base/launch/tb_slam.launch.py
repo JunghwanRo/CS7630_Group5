@@ -42,23 +42,13 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    return LaunchDescription(
-        [
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    [
-                        get_package_share_directory("ar_slam_base"),
-                        "/tb_slam_only.launch.py",
-                    ]
-                )
-            ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    [
-                        get_package_share_directory("ar_slam_base"),
-                        "/ar_slam_env.launch.py",
-                    ]
-                )
-            ),
-        ]
-    )
+    return LaunchDescription([
+        IncludeLaunchDescription(
+              PythonLaunchDescriptionSource([get_package_share_directory('ar_slam_base') ,
+                        '/tb_slam_only.launch.py'])
+              ),
+        IncludeLaunchDescription(
+              PythonLaunchDescriptionSource([get_package_share_directory('ar_slam_base') ,
+                        '/tb_slam_env.launch.py'])
+              )
+    ])

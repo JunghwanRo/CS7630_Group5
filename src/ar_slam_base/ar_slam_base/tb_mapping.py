@@ -29,6 +29,7 @@ class DeltaMapping(Node):
         super().__init__("rover_mapping")
         self.name = name
         self.declare_parameter('~/target_frame', "map")
+        self.declare_parameter('~/base_frame', "base_link")
         self.declare_parameter('~/ignore_id', False)
         self.declare_parameter('~/x_precision', 0.01) #[m]
         self.declare_parameter('~/y_precision', 0.001) #[m]
@@ -39,6 +40,7 @@ class DeltaMapping(Node):
         self.declare_parameter('~/initial_theta', 0.0) #[rad]
         self.ignore_id = self.get_parameter('~/ignore_id').get_parameter_value().bool_value
         self.target_frame = self.get_parameter('~/target_frame').get_parameter_value().string_value
+        self.base_frame = self.get_parameter('~/base_frame').get_parameter_value().string_value
         self.x_precision = self.get_parameter('~/x_precision').get_parameter_value().double_value
         self.y_precision = self.get_parameter('~/y_precision').get_parameter_value().double_value
         self.theta_precision = self.get_parameter('~/theta_precision').get_parameter_value().double_value
@@ -58,7 +60,7 @@ class DeltaMapping(Node):
         # Instantiate the right filter based on launch parameters
         initial_vec = [self.initial_x, self.initial_y, self.initial_theta]
         initial_unc = [0.01, 0.01, 0.01]
-        odom_unc = [self.x_precision,self.y_precision,selt.theta_precision]
+        self.odom_unc = [self.x_precision,self.y_precision,self.theta_precision]
         self.mapper = MappingKF(self,initial_vec,initial_unc)
 
 
@@ -72,8 +74,8 @@ class DeltaMapping(Node):
         self.ready = True
 
     def publish(self, stamp):
-        self.mapper.publish(self.pose_pub,self.odom_pub,self.target_frame,stamp,"base_link")
-        self.mapper.broadcast(self.broadcaster, self.target_frame, stamp)
+        self.mapper.publish(self.pose_pub,self.odom_pub,self.target_frame,stamp,self.base_frame)
+        self.mapper.broadcast(self.broadcaster, self.target_frame, self.base_frame, stamp, True)
 
 
     def odo_cb(self,odom):
@@ -93,10 +95,13 @@ class DeltaMapping(Node):
                 PyKDL.Vector(pp.x,pp.y,pp.z))
         cur_frame = PyKDL.Frame(PyKDL.Rotation.Quaternion(cq.x, cq.y, cq.z, cq.w),
                 PyKDL.Vector(cp.x,cp.y,cp.z))
-        delta_frame = prev_frame.inverse()*cur_frame
+        delta_frame = prev_frame.Inverse()*cur_frame
         
-        deltaX = np.vstack([delta_frame.p.x,delta_frame.p.y,delta_frame.M.GetRPY()[2]])
-        deltaP = np.diag(odom_unc)
+        deltax = [delta_frame.p.x(),delta_frame.p.y(),delta_frame.M.GetRPY()[2]]
+        deltap = [abs(z)*y+1e-12 for y,z in zip(self.odom_unc,deltax)]
+        deltaX = np.vstack(deltax)
+        deltaP = np.diag(deltap)
+        self.get_logger().info("DeltaX: " + str(deltax)+ " DeltaP: " + str(deltap))
 
         self.mapper.predict_delta(self.get_logger(),deltaX,deltaP)
         self.publish(odom.header.stamp)
@@ -104,19 +109,17 @@ class DeltaMapping(Node):
 
 
     def ar_cb(self, markers):
-        if not self.use_ar:
-            return
         self.get_logger().info("Received marker array with %d detections" % len(markers.markers))
         for m in markers.markers:
             try:
-                res = self.tf_buffer.can_transform('%s_ground'% self.name, markers.header.frame_id, markers.header.stamp, rclpy.time.Duration(seconds=1.0),True)
+                res = self.tf_buffer.can_transform(self.base_frame, markers.header.frame_id, markers.header.stamp, rclpy.time.Duration(seconds=1.0),True)
                 if not res[0]:
                     self.get_logger().info(res[1])
                     continue
                 m_pose = PointStamped()
                 m_pose.header = markers.header
                 m_pose.point = m.pose.position
-                t = self.tf_buffer.lookup_transform('%s_ground'%(self.name),markers.header.frame_id,markers.header.stamp)
+                t = self.tf_buffer.lookup_transform(self.base_frame,markers.header.frame_id,markers.header.stamp)
                 m_pose = tf2_geometry_msgs.do_transform_point(m_pose,t)
                 Z = np.vstack([m_pose.point.x,m_pose.point.y])
 
@@ -134,7 +137,7 @@ class DeltaMapping(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    delta_mapping = DeltaMapping('rover')
+    delta_mapping = DeltaMapping('turtlebot')
 
     rclpy.spin(delta_mapping)
 

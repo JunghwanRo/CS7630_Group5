@@ -15,7 +15,7 @@
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>ar_mapping_base</depend> <!-- launch files -->
-  <depend>rover_driver</depend> <!-- Kinematic -->
+  <depend>rover_driver_base</depend> <!-- Kinematic -->
   <depend>ar_loc_base</depend> <!-- RoverOdo -->
 
   <test_depend>ament_copyright</test_depend>
