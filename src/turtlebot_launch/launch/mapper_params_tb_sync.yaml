@@ -10,10 +10,10 @@ slam_toolbox:
     ceres_loss_function: None
 
     # ROS Parameters
-    odom_frame: world #adapted for bubblerob
-    map_frame: map
-    base_frame: bubbleRob
-    scan_topic: /vrep/hokuyo
+    odom_frame: odom # coppeliasim: world
+    map_frame: map # coppeliaSim: map
+    base_frame: base_link # coppeliaSim: bubbleRob
+    scan_topic: /scan # coppeliaSim: /vrep/hokuyo
     use_map_saver: false
     mode: mapping #localization
 

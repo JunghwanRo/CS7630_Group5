@@ -26,62 +26,83 @@ from launch.substitutions import ThisLaunchFileDir
 
 
 def print_func(context: LaunchContext, arg1: LaunchConfiguration):
-        value = context.perform_substitution(arg1)
-        print(value)
+    value = context.perform_substitution(arg1)
+    print(value)
+
 
 def generate_launch_description():
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
-    turtlebot_launch_prefix = get_package_share_directory('turtlebot_launch')
-    cartographer_config_dir = LaunchConfiguration('cartographer_config_dir', default=turtlebot_launch_prefix)
-    configuration_basename = LaunchConfiguration('configuration_basename',
-                                                 default='turtlebot_cartographer.lua')
+    use_sim_time = LaunchConfiguration("use_sim_time", default="false")
+    turtlebot_launch_prefix = get_package_share_directory("turtlebot_launch")
+    cartographer_config_dir = LaunchConfiguration(
+        "cartographer_config_dir", default=turtlebot_launch_prefix
+    )
+    configuration_basename = LaunchConfiguration(
+        "configuration_basename", default="turtlebot_cartographer.lua"
+    )
 
-    resolution = LaunchConfiguration('resolution', default='0.05')
-    publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
+    resolution = LaunchConfiguration("resolution", default="0.05")
+    publish_period_sec = LaunchConfiguration("publish_period_sec", default="1.0")
 
-    rviz_config_dir = os.path.join(get_package_share_directory('turtlebot_launch'),
-                                   'turtlebot_cartographer.rviz')
+    rviz_config_dir = os.path.join(
+        get_package_share_directory("turtlebot_launch"), "turtlebot_cartographer.rviz"
+    )
 
-    return LaunchDescription([
-        DeclareLaunchArgument(
-            'cartographer_config_dir',
-            default_value=cartographer_config_dir,
-            description='Full path to config file to load'),
-        DeclareLaunchArgument(
-            'configuration_basename',
-            default_value=configuration_basename,
-            description='Name of lua file for cartographer'),
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='false',
-            description='Use simulation (Gazebo) clock if true'),
-
-        OpaqueFunction(function=print_func, args=[cartographer_config_dir]),
-        OpaqueFunction(function=print_func, args=[configuration_basename]),
-
-        Node(
-            package='cartographer_ros',
-            executable='cartographer_node',
-            name='cartographer_node',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-            arguments=['-configuration_directory', cartographer_config_dir,
-                       '-configuration_basename', configuration_basename]),
-
-        DeclareLaunchArgument(
-            'resolution',
-            default_value=resolution,
-            description='Resolution of a grid cell in the published occupancy grid'),
-
-        DeclareLaunchArgument(
-            'publish_period_sec',
-            default_value=publish_period_sec,
-            description='OccupancyGrid publishing period'),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/occupancy_grid.launch.py']),
-            launch_arguments={'use_sim_time': use_sim_time, 'resolution': resolution,
-                              'publish_period_sec': publish_period_sec}.items(),
-        ),
-
-    ])
+    return LaunchDescription(
+        [
+            DeclareLaunchArgument(
+                "cartographer_config_dir",
+                default_value=cartographer_config_dir,
+                description="Full path to config file to load",
+            ),
+            DeclareLaunchArgument(
+                "configuration_basename",
+                default_value=configuration_basename,
+                description="Name of lua file for cartographer",
+            ),
+            DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use simulation (Gazebo) clock if true",
+            ),
+            OpaqueFunction(function=print_func, args=[cartographer_config_dir]),
+            OpaqueFunction(function=print_func, args=[configuration_basename]),
+            Node(
+                package="cartographer_ros",
+                executable="cartographer_node",
+                name="cartographer_node",
+                output="screen",
+                parameters=[{"use_sim_time": use_sim_time}],
+                arguments=[
+                    "-configuration_directory",
+                    cartographer_config_dir,
+                    "-configuration_basename",
+                    configuration_basename,
+                ]# for coppeliaSim
+                """,  
+                remappings=[
+                    ("/scan", "/vrep/hokuyo"),
+                ],
+                """
+            ),
+            DeclareLaunchArgument(
+                "resolution",
+                default_value=resolution,
+                description="Resolution of a grid cell in the published occupancy grid",
+            ),
+            DeclareLaunchArgument(
+                "publish_period_sec",
+                default_value=publish_period_sec,
+                description="OccupancyGrid publishing period",
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [ThisLaunchFileDir(), "/occupancy_grid.launch.py"]
+                ),
+                launch_arguments={
+                    "use_sim_time": use_sim_time,
+                    "resolution": resolution,
+                    "publish_period_sec": publish_period_sec,
+                }.items(),
+            ),
+        ]
+    )

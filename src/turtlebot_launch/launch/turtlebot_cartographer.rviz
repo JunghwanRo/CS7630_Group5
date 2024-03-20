@@ -5,11 +5,13 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Status1
         - /TF1
+        - /TF1/Status1
         - /TF1/Frames1
         - /LaserScan1/Topic1
         - /Map1
-        - /Map2
+        - /Map1/Status1
       Splitter Ratio: 0.3916349709033966
     Tree Height: 578
   - Class: rviz_common/Selection
@@ -50,46 +52,42 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: false
+        All Enabled: true
         base_footprint:
-          Value: false
+          Value: true
         base_link:
           Value: true
         camera_depth_frame:
-          Value: false
+          Value: true
         camera_depth_optical_frame:
-          Value: false
+          Value: true
         camera_link:
-          Value: false
+          Value: true
         camera_rgb_frame:
-          Value: false
+          Value: true
         camera_rgb_optical_frame:
-          Value: false
+          Value: true
         front_wheel_link:
-          Value: false
+          Value: true
         gyro_link:
-          Value: false
+          Value: true
         laser:
-          Value: false
+          Value: true
         left_cliff_sensor_link:
-          Value: false
+          Value: true
         left_wheel_link:
-          Value: false
+          Value: true
         leftfront_cliff_sensor_link:
-          Value: false
+          Value: true
         map:
           Value: true
-        marker_10:
+        marker_11:
           Value: true
-        marker_12:
+        marker_3:
           Value: true
-        marker_13:
+        marker_4:
           Value: true
-        marker_15:
-          Value: true
-        marker_17:
-          Value: true
-        marker_2:
+        marker_5:
           Value: true
         marker_6:
           Value: true
@@ -102,59 +100,59 @@ Visualization Manager:
         odom:
           Value: true
         plate_0_link:
-          Value: false
+          Value: true
         plate_1_link:
-          Value: false
+          Value: true
         plate_2_link:
-          Value: false
+          Value: true
         plate_3_link:
-          Value: false
+          Value: true
         rear_wheel_link:
-          Value: false
+          Value: true
         right_cliff_sensor_link:
-          Value: false
+          Value: true
         right_wheel_link:
-          Value: false
+          Value: true
         rightfront_cliff_sensor_link:
-          Value: false
+          Value: true
         spacer_0_link:
-          Value: false
+          Value: true
         spacer_1_link:
-          Value: false
+          Value: true
         spacer_2_link:
-          Value: false
+          Value: true
         spacer_3_link:
-          Value: false
+          Value: true
         standoff_2in_0_link:
-          Value: false
+          Value: true
         standoff_2in_1_link:
-          Value: false
+          Value: true
         standoff_2in_2_link:
-          Value: false
+          Value: true
         standoff_2in_3_link:
-          Value: false
+          Value: true
         standoff_2in_4_link:
-          Value: false
+          Value: true
         standoff_2in_5_link:
-          Value: false
+          Value: true
         standoff_2in_6_link:
-          Value: false
+          Value: true
         standoff_2in_7_link:
-          Value: false
+          Value: true
         standoff_8in_0_link:
-          Value: false
+          Value: true
         standoff_8in_1_link:
-          Value: false
+          Value: true
         standoff_8in_2_link:
-          Value: false
+          Value: true
         standoff_8in_3_link:
-          Value: false
+          Value: true
         standoff_kinect_0_link:
-          Value: false
+          Value: true
         standoff_kinect_1_link:
-          Value: false
+          Value: true
         wall_sensor_link:
-          Value: false
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -186,21 +184,15 @@ Visualization Manager:
                             {}
                         camera_rgb_frame:
                           camera_rgb_optical_frame:
-                            marker_10:
+                            marker_11:
                               {}
-                            marker_12:
+                            marker_3:
                               {}
-                            marker_13:
+                            marker_4:
                               {}
-                            marker_15:
-                              {}
-                            marker_17:
-                              {}
-                            marker_2:
+                            marker_5:
                               {}
                             marker_6:
-                              {}
-                            marker_7:
                               {}
                             marker_8:
                               {}
@@ -299,7 +291,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: false
+      Enabled: true
       Keep: 100
       Name: Odometry
       Position Tolerance: 0.10000000149011612
@@ -320,7 +312,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /odom
-      Value: false
+      Value: true
     - Alpha: 0.6000000238418579
       Class: rviz_default_plugins/Map
       Color Scheme: map
@@ -598,7 +590,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -638,7 +630,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: 0.0549997016787529
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -648,11 +640,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 42.25300598144531
+      Scale: 49.37152862548828
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: -4.355437278747559
-      Y: -25.056617736816406
+      X: 2.7182841300964355
+      Y: -1.3973075151443481
     Saved: ~
 Window Geometry:
   Displays:
