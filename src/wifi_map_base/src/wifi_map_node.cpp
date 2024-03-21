@@ -86,7 +86,7 @@ class WifiMapNode : public rclcpp::Node {
             if (weights_.rows == 0) {
                 RCLCPP_INFO(this->get_logger(),"Initialising voting weights");
                 int winsize = round(2*measurement_radius_/info_.resolution);
-                int sigma = 5.0;
+                int sigma = 5;
                 winsize += 1 - (winsize & 1); // Make it odd
                 // Initialise the signal voting weights as a (winsize x winsize) matrix
                 weights_ = cv::Mat_<float>(winsize,winsize,0.0f);
@@ -99,7 +99,7 @@ class WifiMapNode : public rclcpp::Node {
                         // TODO 1: Affect a weight to i,j as a function of x,y. Weights should be in [0,1]
                         /* Prepare a weight matrix to precompute w (x, y, 0, 0) for x , y ∈[−r , r ]2 . 
                         This needs to be done only once, and is indicated by “TODO 1” in the base file.*/
-                        weights_(i,j) = exp(-(pow(x, 2) + pow(y, 2)) / pow(sigma, 2));
+                        weights_(i,j) = exp(-0.5 * (pow(x, 2) + pow(y, 2)) / pow(sigma, 2));
                     }
                 }
                 cv::imwrite("weights.png",weights_*255);
@@ -159,11 +159,12 @@ class WifiMapNode : public rclcpp::Node {
                     float quotient = 0.0;
                     if (denominator(j, i) != 0) {
                         quotient = numerator(j, i) / denominator(j, i);
+                        // std::cout << "quotient: " << quotient << "\n";
                     }
                     if (quotient == 0 || isnan(quotient)) {
                         og_mat(j, i) = -1;
                     } else {
-                        int value = static_cast<int>(quotient * 255.0f);
+                        int value = static_cast<int>(quotient);
                         value = std::max(og_max, std::min(og_min, value)); 
                         if (og_(j, i) == OCCUPIED) {
                             og_mat(j, i) = og_min;
