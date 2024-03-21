@@ -137,7 +137,7 @@ class WifiMapNode : public rclcpp::Node {
                 and for each measurement (xi , yi , si ) , add w×si and w to the numerator and denominator matrices. 
                 This should be done as matrix operations for efficiency. 
                 The addWeightedWindow function provides a way to do this efficiently while checking for boundary conditions. */
-                cv::Point2i where(ws.x/info_.resolution + og_center_.position.x, ws.y/info_.resolution + og_center_.position.y); 
+                cv::Point2i where(ws.x/info_.resolution + og_center_.x, ws.y/info_.resolution + og_center_.y); 
 
                 cv::Mat_<float> weighted_intensity = weights_.mul(intensity);
 
@@ -160,19 +160,17 @@ class WifiMapNode : public rclcpp::Node {
                     if (denominator(j, i) != 0) {
                         quotient = numerator(j, i) / denominator(j, i);
                     }
-                    // If the quotient is zero or NaN, mark as unknown
                     if (quotient == 0 || isnan(quotient)) {
-                        // Mark as unknown
                         og_mat(j, i) = -1;
                     } else {
-                        int value = static_cast<int>(quotient * 100.0f);
+                        int value = static_cast<int>(quotient * 255.0f);
                         value = std::max(og_max, std::min(og_min, value)); 
-                        if (og_(j, i) == 100) {
-                            og_mat(j, i) = 100;
-                        } else if (og_(j, i) == 0) {
+                        if (og_(j, i) == OCCUPIED) {
+                            og_mat(j, i) = og_min;
+                        } else if (og_(j, i) == FREE) {
                             og_mat(j, i) = static_cast<uint8_t>(value);
                         } else {
-                            og_mat(j, i) = (quotient < 0.01) ? -1 : static_cast<uint8_t>(value);
+                            og_mat(j, i) = (quotient < 1e-7) ? -1 : static_cast<uint8_t>(value);
                         }
                     }
                 // print og_mat(j,i) to check the value
