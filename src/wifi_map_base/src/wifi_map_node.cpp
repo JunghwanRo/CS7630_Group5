@@ -208,7 +208,6 @@ class WifiMapNode : public rclcpp::Node {
         void addWeightedWindow(cv::Mat_<float> & dest,
                 const cv::Mat_<float> & weights,
                 const cv::Point2i & center) {
-            /*
             cv::Point2i w_center(weights.cols/2,weights.rows/2);
             cv::Rect Rd(0,0,dest.cols,dest.rows);
             cv::Rect Rw(0,0,weights.cols,weights.rows);
@@ -221,33 +220,6 @@ class WifiMapNode : public rclcpp::Node {
             Rw = Rd - center + w_center;
             // Now we can add two windows of exactly the same size, without risks of accessing pixels outside the matrix
             dest(Rd) += weights(Rw);
-            */
-            cv::Point2i w_center(weights.cols / 2, weights.rows / 2);
-            cv::Rect Rd(0, 0, dest.cols, dest.rows); // Rectangle defining the entire destination matrix
-            cv::Rect Rw(center.x - w_center.x, center.y - w_center.y, weights.cols, weights.rows); // Rectangle where weights should be applied in dest
-
-            // Ensure Rw is within bounds of Rd, adjust if necessary
-            cv::Rect intersection = Rw & Rd; // Intersection between Rw and Rd, ensures we're within bounds
-            if (intersection.area() <= 0) {
-                // No intersection, nothing to do
-                return;
-            }
-
-            // Adjust Rw to match the intersection, for applying weights correctly
-            Rw.x = intersection.x;
-            Rw.y = intersection.y;
-            Rw.width = intersection.width;
-            Rw.height = intersection.height;
-
-            // Calculate the corresponding region in weights based on the intersection
-            cv::Point2i weightsTopLeft = cv::Point2i(Rw.x - (center.x - w_center.x), Rw.y - (center.y - w_center.y));
-
-            // Add the weighted values from weights to dest within the intersection
-            for (int y = 0; y < Rw.height; ++y) {
-                for (int x = 0; x < Rw.width; ++x) {
-                    dest.at<float>(Rw.y + y, Rw.x + x) += weights.at<float>(weightsTopLeft.y + y, weightsTopLeft.x + x);
-                }
-            }
         }
 
         void og_to_mat(const nav_msgs::msg::OccupancyGrid & og, cv::Mat_<uint8_t> & mat) {
