@@ -137,7 +137,8 @@ class WifiMapNode : public rclcpp::Node {
                 and for each measurement (xi , yi , si ) , add w×si and w to the numerator and denominator matrices. 
                 This should be done as matrix operations for efficiency. 
                 The addWeightedWindow function provides a way to do this efficiently while checking for boundary conditions. */
-                cv::Point2i where(ws.x, ws.y); 
+                cv::Point2i where(ws.x/info_.resolution + og_center_.position.x, ws.y/info_.resolution + og_center_.position.y); 
+
                 cv::Mat_<float> weighted_intensity = weights_.mul(intensity);
 
                 addWeightedWindow(numerator, weighted_intensity, where);
@@ -162,22 +163,16 @@ class WifiMapNode : public rclcpp::Node {
                     // If the quotient is zero or NaN, mark as unknown
                     if (quotient == 0 || isnan(quotient)) {
                         // Mark as unknown
-
-                        //std::cout << "1" << std::endl;
-
-                        og_mat(j, i) = UNKNOWN;
+                        og_mat(j, i) = -1;
                     } else {
-                        int value = static_cast<int>(quotient * 255.0f);
-                        value = std::max(0, std::min(255, value)); 
-                        if (og_(j, i) == OCCUPIED) {
-                            std::cout << "2" << std::endl;
-                            og_mat(j, i) = OCCUPIED;
-                        } else if (og_(j, i) == FREE) {
-                            std::cout << "3" << std::endl;
+                        int value = static_cast<int>(quotient * 100.0f);
+                        value = std::max(og_max, std::min(og_min, value)); 
+                        if (og_(j, i) == 100) {
+                            og_mat(j, i) = 100;
+                        } else if (og_(j, i) == 0) {
                             og_mat(j, i) = static_cast<uint8_t>(value);
                         } else {
-                            std::cout << "4" << std::endl;
-                            og_mat(j, i) = (quotient < 0.01) ? UNKNOWN : static_cast<uint8_t>(value);
+                            og_mat(j, i) = (quotient < 0.01) ? -1 : static_cast<uint8_t>(value);
                         }
                     }
                 // print og_mat(j,i) to check the value
