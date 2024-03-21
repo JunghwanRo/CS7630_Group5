@@ -95,11 +95,15 @@ class WifiMapNode : public rclcpp::Node {
                         // compute (x,y) as the vector from the window center
                         float y = i - winsize/2;
                         float x = j - winsize/2;
-
                         // TODO 1: Affect a weight to i,j as a function of x,y. Weights should be in [0,1]
                         /* Prepare a weight matrix to precompute w (x, y, 0, 0) for x , y ∈[−r , r ]2 . 
                         This needs to be done only once, and is indicated by “TODO 1” in the base file.*/
+
+                        // check if it is in the measurement radius!
+                        if (hypot(x,y) * info_.resolution < measurement_radius_) {
+
                         weights_(i,j) = exp(-0.5 * (pow(x, 2) + pow(y, 2)) / pow(sigma, 2));
+                        }
                     }
                 }
                 cv::imwrite("weights.png",weights_*255);
