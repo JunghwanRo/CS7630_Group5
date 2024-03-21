@@ -83,10 +83,10 @@ class WifiMapNode : public rclcpp::Node {
                 return;
             }
 
-
             if (weights_.rows == 0) {
                 RCLCPP_INFO(this->get_logger(),"Initialising voting weights");
                 int winsize = round(2*measurement_radius_/info_.resolution);
+                int sigma = 5.0;
                 winsize += 1 - (winsize & 1); // Make it odd
                 // Initialise the signal voting weights as a (winsize x winsize) matrix
                 weights_ = cv::Mat_<float>(winsize,winsize,0.0f);
@@ -97,7 +97,9 @@ class WifiMapNode : public rclcpp::Node {
                         float x = j - winsize/2;
 
                         // TODO 1: Affect a weight to i,j as a function of x,y. Weights should be in [0,1]
-                        weights_(i,j) = hypot(x,y) / hypot(winsize/2,winsize/2);
+                        /* Prepare a weight matrix to precompute w (x, y, 0, 0) for x , y ∈[−r , r ]2 . 
+                        This needs to be done only once, and is indicated by “TODO 1” in the base file.*/
+                        weights_(i,j) = exp(-(pow(x, 2) + pow(y, 2)) / pow(sigma, 2));
                     }
                 }
                 cv::imwrite("weights.png",weights_*255);
@@ -119,8 +121,10 @@ class WifiMapNode : public rclcpp::Node {
             // TODO Initialise mat.
             // In the end, every pixel should contain sum(w_i s_i) / sum(w_i)
 
-            cv::Mat_<float> example_float_mat(info_.height, info_.width,0.0);
-            cv::Mat_<uint8_t> example_byte_mat(info_.height, info_.width,uint8_t(0));
+            cv::Mat_<float> numerator(info_.height, info_.width, 0.0);
+            cv::Mat_<float> denominator(info_.height, info_.width, 0.0);
+            cv::Mat_<uint8_t> value_v(info_.height, info_.width, uint8_t(0));
+
             RCLCPP_INFO(this->get_logger(),"Bssid %s has received %d measurements",it->first.c_str(),int(it->second.size()));
             for (size_t i=0;i<it->second.size();i++) {
                 const WifiStrength & ws = it->second[i];
@@ -128,8 +132,17 @@ class WifiMapNode : public rclcpp::Node {
                 // TODO 2: handle measurement i at position (ws.x,ws.y) with value intensity
                 // You should use addWeightedWindow to add a smoothly weighted signal around (ws.x,ws.y).
                 // Example usage:
-                cv::Point2i where(info_.width/2,info_.height/2);
-                addWeightedWindow(example_float_mat, weights_ * 5.0, where);
+                /* we need to compute individually the numerator and denominator. 
+                Create two matrices (numerator, denominator) of the same size as the occupancy grid, 
+                and for each measurement (xi , yi , si ) , add w×si and w to the numerator and denominator matrices. 
+                This should be done as matrix operations for efficiency. 
+                The addWeightedWindow function provides a way to do this efficiently while checking for boundary conditions. */
+                cv::Point2i where(ws.x, ws.y); 
+                cv::Mat_<float> weighted_intensity = weights_.mul(intensity);
+
+                addWeightedWindow(numerator, weighted_intensity, where);
+                addWeightedWindow(denominator, weights_, where);
+
             }
 
             // og_mat needs to be a clone of og_ for info_ to make sense
@@ -140,15 +153,42 @@ class WifiMapNode : public rclcpp::Node {
                     // TODO 3: Fill og_mat(j,i) with sum(w_i s_i)/sum(w_i) if not NaN,
                     // You can also account for the known occupancy grid og_(j,i),
                     // og_(j,i) can be OCCUPIED, FREE, UNKNOWN
-
                     // Example affectation for an unknown value
-                    og_mat(j,i) = example_float_mat(j,i);
+                    /* Once we have computed the numerator and denominator, one just need to compute the quotient to update the occupancy grid. Note that if the quotient at a given pixel is zero (or very small), the grid pixel should be labeled “unknown” (i.e. -1). You could also decide to just mark occupied any cell labeled occupied in the original occupancy grid: wifi signal strength only makes sense in the environment free space.*/
+                    float quotient = 0.0;
+                    if (denominator(j, i) != 0) {
+                        quotient = numerator(j, i) / denominator(j, i);
+                    }
+                    // If the quotient is zero or NaN, mark as unknown
+                    if (quotient == 0 || isnan(quotient)) {
+                        // Mark as unknown
 
+                        //std::cout << "1" << std::endl;
+
+                        og_mat(j, i) = UNKNOWN;
+                    } else {
+                        int value = static_cast<int>(quotient * 255.0f);
+                        value = std::max(0, std::min(255, value)); 
+                        if (og_(j, i) == OCCUPIED) {
+                            std::cout << "2" << std::endl;
+                            og_mat(j, i) = OCCUPIED;
+                        } else if (og_(j, i) == FREE) {
+                            std::cout << "3" << std::endl;
+                            og_mat(j, i) = static_cast<uint8_t>(value);
+                        } else {
+                            std::cout << "4" << std::endl;
+                            og_mat(j, i) = (quotient < 0.01) ? UNKNOWN : static_cast<uint8_t>(value);
+                        }
+                    }
+                // print og_mat(j,i) to check the value
+                // std::cout << "og_mat(j,i): " << static_cast<int>(og_mat(j,i)) << std::endl;
                 }
             }
 
             nav_msgs::msg::OccupancyGrid og_out;
             mat_to_og(og_mat,og_out);
+            // print the whole og_mat
+            cv::imwrite("og_mat.png",og_mat);
             og_pub_->publish(og_out);
         }
 
@@ -168,6 +208,7 @@ class WifiMapNode : public rclcpp::Node {
         void addWeightedWindow(cv::Mat_<float> & dest,
                 const cv::Mat_<float> & weights,
                 const cv::Point2i & center) {
+            /*
             cv::Point2i w_center(weights.cols/2,weights.rows/2);
             cv::Rect Rd(0,0,dest.cols,dest.rows);
             cv::Rect Rw(0,0,weights.cols,weights.rows);
@@ -180,6 +221,33 @@ class WifiMapNode : public rclcpp::Node {
             Rw = Rd - center + w_center;
             // Now we can add two windows of exactly the same size, without risks of accessing pixels outside the matrix
             dest(Rd) += weights(Rw);
+            */
+            cv::Point2i w_center(weights.cols / 2, weights.rows / 2);
+            cv::Rect Rd(0, 0, dest.cols, dest.rows); // Rectangle defining the entire destination matrix
+            cv::Rect Rw(center.x - w_center.x, center.y - w_center.y, weights.cols, weights.rows); // Rectangle where weights should be applied in dest
+
+            // Ensure Rw is within bounds of Rd, adjust if necessary
+            cv::Rect intersection = Rw & Rd; // Intersection between Rw and Rd, ensures we're within bounds
+            if (intersection.area() <= 0) {
+                // No intersection, nothing to do
+                return;
+            }
+
+            // Adjust Rw to match the intersection, for applying weights correctly
+            Rw.x = intersection.x;
+            Rw.y = intersection.y;
+            Rw.width = intersection.width;
+            Rw.height = intersection.height;
+
+            // Calculate the corresponding region in weights based on the intersection
+            cv::Point2i weightsTopLeft = cv::Point2i(Rw.x - (center.x - w_center.x), Rw.y - (center.y - w_center.y));
+
+            // Add the weighted values from weights to dest within the intersection
+            for (int y = 0; y < Rw.height; ++y) {
+                for (int x = 0; x < Rw.width; ++x) {
+                    dest.at<float>(Rw.y + y, Rw.x + x) += weights.at<float>(weightsTopLeft.y + y, weightsTopLeft.x + x);
+                }
+            }
         }
 
         void og_to_mat(const nav_msgs::msg::OccupancyGrid & og, cv::Mat_<uint8_t> & mat) {
