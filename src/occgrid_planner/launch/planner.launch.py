@@ -60,9 +60,9 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='vrep_ros_teleop', executable='teleop_node', name='teleop',
             parameters=[
-                {'~/axis_linear_x': 4},
-                {'~/axis_angular': 3},
-                {'~/scale_linear_x': 0.2},
+                {'~/axis_linear_x': 1},
+                {'~/axis_angular': 2},
+                {'~/scale_linear_x': 1.},
                 {'~/scale_angular': 1.},
                 {'~/timeout': 1.0}
                 ],
@@ -100,9 +100,11 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='occgrid_planner', executable='path_optimizer', name='path_optimizer',
             parameters=[
-                {'~/max_acceleration': 0.3},
-                {'~/max_braking': 0.1},
-                {'~/velocity': 0.1},
+                {'~/max_acceleration': 0.2},
+                {'~/max_braking': 0.05},
+                {'~/velocity': 0.5
+                 
+                 },
                 ],
             remappings=[
                 ('~/path', '/occgrid_planner/path'),
@@ -112,12 +114,12 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='occgrid_planner', executable='path_follower', name='path_follower',
             parameters=[
-                {'~/Kx': 1.0},
-                {'~/Ky': 0.0},
-                {'~/Ktheta': 1.0},
-                {'~/max_rot_speed': 1.0},
-                {'~/max_velocity': 0.1},
-                {'~/max_y_error': 1.0},
+                {'~/Kx': 0.8},
+                {'~/Ky': 2},
+                {'~/Ktheta': 1.6},
+                {'~/max_rot_speed': 1.5},
+                {'~/max_velocity': 1.0},
+                {'~/max_y_error': 0.3},
                 {'~/max_error': 0.5},
                 {'~/look_ahead': 1.0},
                 {'~/base_frame': 'bubbleRob'},
