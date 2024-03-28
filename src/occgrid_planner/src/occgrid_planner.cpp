@@ -49,6 +49,8 @@ class OccupancyGridPlanner : public rclcpp::Node {
         bool ready;
         bool debug_;
         double robot_radius_;
+        // Add variable for time
+        std::chrono::time_point<std::chrono::system_clock> time_;
 
         typedef std::multimap<float, cv::Point3i> Heap;
 
@@ -79,7 +81,7 @@ class OccupancyGridPlanner : public rclcpp::Node {
                             break;
                         case -1: 
                         default:
-                            og_(j,i) = FREE; 
+                            og_(j,i) = UNKNOWN; 
                             break;
                     }
                     // Update the bounding box of free or occupied cells.
@@ -130,10 +132,16 @@ class OccupancyGridPlanner : public rclcpp::Node {
                 cv::imshow( "OccGrid", og_rgb_ );
             }
 
-            if (ready && last_goal_.has_value()) {
-                last_goal_->header.stamp = this->get_clock()->now();
-                target_callback(std::make_shared<geometry_msgs::msg::PoseStamped>(last_goal_.value()));
+            // If time_ is passed 5 sec, call the target_callback function
+            if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - time_).count() > 5) {
+                if (last_goal_.has_value()) {
+                    last_goal_->header.stamp = this->get_clock()->now();
+                    target_callback(std::make_shared<geometry_msgs::msg::PoseStamped>(last_goal_.value()));
+                }
             }
+
+            // Update time_ 
+            time_ = std::chrono::system_clock::now();
         }
         
 
@@ -219,8 +227,8 @@ class OccupancyGridPlanner : public rclcpp::Node {
                         pose.pose.position.x, pose.pose.position.y, target.x, target.y);
                 return;
             }
-            // Only accept target which are FREE in the grid (HW, Step 5).
-            if (og_(P2(target)) != FREE) {
+            // Only accept target which are FREE in the grid (HW, Step 5). -> Done, If Occupied, do not accept target
+            if (og_(P2(target)) == OCCUPIED) {
                 RCLCPP_ERROR(this->get_logger(),"Invalid target point: occupancy = %d",og_(P2(target)));
                 return;
             }
@@ -312,8 +320,8 @@ class OccupancyGridPlanner : public rclcpp::Node {
                         continue;
                     }
                     uint8_t og = og_(P2(dest));
-                    if (og != FREE) {
-                        // occupied or unknown
+                    if (og == OCCUPIED) {
+                        // occupied cell
                         continue;
                     }
                     float cv = cell_value(dest.x,dest.y,dest.z);

@@ -67,9 +67,9 @@ def generate_launch_description():
                 executable="teleop_node",
                 name="teleop",
                 parameters=[
-                    {"~/axis_linear_x": 1},
-                    {"~/axis_angular": 2},
-                    {"~/scale_linear_x": 1.0},
+                    {"~/axis_linear_x": 4},
+                    {"~/axis_angular": 3},
+                    {"~/scale_linear_x": 0.2},
                     {"~/scale_angular": 1.0},
                     {"~/timeout": 1.0},
                 ],
@@ -128,13 +128,13 @@ def generate_launch_description():
                 name="path_follower",
                 parameters=[
                     {"~/Kx": 0.8},
-                    {"~/Ky": 2},
+                    {"~/Ky": 2.0},
                     {"~/Ktheta": 1.6},
                     {"~/max_rot_speed": 1.5},
                     {"~/max_velocity": 1.0},
                     {"~/max_y_error": 0.3},
                     {"~/max_error": 0.5},
-                    {"~/look_ahead": 1.0},
+                    {"~/look_ahead": 0.5},
                     {"~/base_frame": "bubbleRob"},
                 ],
                 remappings=[
