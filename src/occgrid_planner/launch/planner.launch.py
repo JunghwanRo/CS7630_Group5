@@ -40,94 +40,109 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        launch_ros.actions.Node(
-            package='joy', executable='joy_node', name='joy',
-            parameters=[
-                {'autorepeat_rate': 10.},
-                {'dev': "/dev/input/js0"},
+    return LaunchDescription(
+        [
+            launch_ros.actions.Node(
+                package="joy",
+                executable="joy_node",
+                name="joy",
+                parameters=[
+                    {"autorepeat_rate": 10.0},
+                    {"dev": "/dev/input/js0"},
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='topic_tools', executable='mux', name='cmd_mux',
-            parameters=[
-                {'output_topic': '/vrep/twistCommand'},
-                {'input_topics': ['/teleop/twistCommand','/mux/autoCommand']},
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="topic_tools",
+                executable="mux",
+                name="cmd_mux",
+                parameters=[
+                    {"output_topic": "/vrep/twistCommand"},
+                    {"input_topics": ["/teleop/twistCommand", "/mux/autoCommand"]},
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='vrep_ros_teleop', executable='teleop_node', name='teleop',
-            parameters=[
-                {'~/axis_linear_x': 4},
-                {'~/axis_angular': 3},
-                {'~/scale_linear_x': 0.2},
-                {'~/scale_angular': 1.},
-                {'~/timeout': 1.0}
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="vrep_ros_teleop",
+                executable="teleop_node",
+                name="teleop",
+                parameters=[
+                    {"~/axis_linear_x": 4},
+                    {"~/axis_angular": 3},
+                    {"~/scale_linear_x": 0.2},
+                    {"~/scale_angular": 1.0},
+                    {"~/timeout": 1.0},
                 ],
-            remappings=[
-                ('twistCommand', '/teleop/twistCommand'),
+                remappings=[
+                    ("twistCommand", "/teleop/twistCommand"),
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='vrep_ros_teleop', executable='teleop_mux_node', name='teleop_mux',
-            parameters=[
-                {'~/joystick_button': 0},
-                {'~/joystick_topic': '/teleop/twistCommand'},
-                {'~/auto_button': 1},
-                {'~/auto_topic': '/mux/autoCommand'}
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="vrep_ros_teleop",
+                executable="teleop_mux_node",
+                name="teleop_mux",
+                parameters=[
+                    {"~/joystick_button": 0},
+                    {"~/joystick_topic": "/teleop/twistCommand"},
+                    {"~/auto_button": 1},
+                    {"~/auto_topic": "/mux/autoCommand"},
                 ],
-            remappings=[
-                ('select', '/cmd_mux/select'),
+                remappings=[
+                    ("select", "/cmd_mux/select"),
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='occgrid_planner', executable='occgrid_planner', name='occgrid_planner',
-            parameters=[
-                {'~/neighbourhood': 8},
-                {'~/base_frame': 'bubbleRob'},
-                {'~/debug': False},
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="occgrid_planner",
+                executable="occgrid_planner",
+                name="occgrid_planner",
+                parameters=[
+                    {"~/neighbourhood": 8},
+                    {"~/base_frame": "bubbleRob"},
+                    {"~/debug": False},
                 ],
-            remappings=[
-                ('~/occ_grid', '/map'),
-                ('~/goal', '/goal_pose'),
+                remappings=[
+                    ("~/occ_grid", "/map"),
+                    ("~/goal", "/goal_pose"),
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='occgrid_planner', executable='path_optimizer', name='path_optimizer',
-            parameters=[
-                {'~/max_acceleration': 0.3},
-                {'~/max_braking': 0.1},
-                {'~/velocity': 0.1},
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="occgrid_planner",
+                executable="path_optimizer",
+                name="path_optimizer",
+                parameters=[
+                    {"~/max_acceleration": 0.3},
+                    {"~/max_braking": 0.1},
+                    {"~/velocity": 0.1},
                 ],
-            remappings=[
-                ('~/path', '/occgrid_planner/path'),
+                remappings=[
+                    ("~/path", "/occgrid_planner/path"),
                 ],
-            output='screen'),
-
-        launch_ros.actions.Node(
-            package='occgrid_planner', executable='path_follower', name='path_follower',
-            parameters=[
-                {'~/Kx': 1.0},
-                {'~/Ky': 0.0},
-                {'~/Ktheta': 1.0},
-                {'~/max_rot_speed': 1.0},
-                {'~/max_velocity': 0.1},
-                {'~/max_y_error': 1.0},
-                {'~/max_error': 0.5},
-                {'~/look_ahead': 1.0},
-                {'~/base_frame': 'bubbleRob'},
+                output="screen",
+            ),
+            launch_ros.actions.Node(
+                package="occgrid_planner",
+                executable="path_follower",
+                name="path_follower",
+                parameters=[
+                    {"~/Kx": 1.0},
+                    {"~/Ky": 0.0},
+                    {"~/Ktheta": 1.0},
+                    {"~/max_rot_speed": 1.0},
+                    {"~/max_velocity": 0.5},
+                    {"~/max_y_error": 1.0},
+                    {"~/max_error": 0.5},
+                    {"~/look_ahead": 1.0},
+                    {"~/base_frame": "bubbleRob"},
                 ],
-            remappings=[
-                ('~/traj', '/path_optimizer/trajectory'),
-                ('~/twistCommand', '/mux/autoCommand'),
-                ('~/goal', '/goal_pose'),
+                remappings=[
+                    ("~/traj", "/path_optimizer/trajectory"),
+                    ("~/twistCommand", "/mux/autoCommand"),
+                    ("~/goal", "/goal_pose"),
                 ],
-            output='screen'),
-
-
-    ])
+                output="screen",
+            ),
+        ]
+    )
