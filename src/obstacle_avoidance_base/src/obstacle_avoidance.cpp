@@ -1,5 +1,3 @@
-
-
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -71,6 +69,17 @@ class ObstacleAvoidance : public rclcpp::Node {
                 }
             }
         }
+
+        uint8_t occupancy_dalpha(double d, double alpha) {
+            int i_d = round((d + max_range_) / map_resolution_);
+            if (i_d < 0) i_d =0;
+            if (i_d >= (signed)n_d_) i_d = n_d_-1;
+            if (alpha < 0) alpha += 2*M_PI;
+            if (alpha >= M_PI) alpha -= M_PI;
+            int i_alpha = (int)(round(alpha / alpha_resolution_)) % n_alpha_;
+            return d_alpha_(i_d, i_alpha);
+        }
+
 
         static void dalpha_to_xy(double d, double alpha, double & x, double & y) {
             if (fabs(fabs(alpha)-M_PI/2) < 1e-3) {
@@ -320,4 +329,3 @@ int main(int argc, char * argv[]) {
     rclcpp::spin(std::make_shared<ObstacleAvoidance>());
     rclcpp::shutdown();
 }
-
